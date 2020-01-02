@@ -9,6 +9,18 @@ import java.io.InputStreamReader
  */
 class GeneratorTest {
     private val generator = Generator()
+    // done: optional type(?) parse
+    // done: List type
+    // done: nullable ID
+    // done: built-in scalar type
+    // done: ID type setting (Long, Integer...)
+    // TODO: read multiple file
+    // TODO: generate resolver
+    // TODO: execute by gradle (or native image)
+    // TODO: generate input
+    // TODO: generate enum
+    // TODO: implements type's interface
+
 
     @Test // for test execute
     fun testMain() {
@@ -27,9 +39,6 @@ class GeneratorTest {
         assertEquals(expected?.readText(), actual.readText())
     }
 
-    // done: optional type(?) parse
-    // done: List type
-    // done: nullable ID
     @Test
     fun parseSchema() {
         val input = """
@@ -67,7 +76,6 @@ class GeneratorTest {
         assertEquals("List<List<String?>?>?", actualNestedNullableList.type)
     }
 
-    // done: built-in scalar type
     @Test
     fun parseSchemaBuiltInScalarType() {
         val input = """
@@ -87,9 +95,6 @@ class GeneratorTest {
         val actualBoolean = actual.fields.first { it.name == "boolean" }
         assertEquals("Boolean", actualBoolean.type)
     }
-
-    // TODO: enum
-    // TODO: type interface
 
     @Test
     fun convertBody() {
@@ -116,7 +121,6 @@ class GeneratorTest {
         assertEquals(expected, actual.trimIndent())
     }
 
-    // done: ID type setting (Long, Integer...)
     @Test
     fun convertBodyWithIDType() {
         val input = """
