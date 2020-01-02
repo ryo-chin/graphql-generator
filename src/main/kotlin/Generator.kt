@@ -10,18 +10,25 @@ import java.nio.file.Files
  */
 
 fun main(args: Array<String>) {
-    val generator = Generator()
     val schemaPath = args.asList().elementAtOrNull(0) ?: throw IllegalArgumentException("arg[0] schemaPath is required")
     val outputDirPath = args.asList().elementAtOrNull(1)
             ?: throw IllegalArgumentException("arg[1] outputDirPath is required")
+    val idType = System.getProperty("idType")?.let { IDType.valueOf(it) } ?: IDType.String
+
+    val generator = Generator(idType)
+
     val schemaFile = generator.read(schemaPath)
-            ?: throw IllegalStateException("schema file is not exist. schemaPath=$schemaPath")
+    if (!schemaFile.exists()) {
+        throw IllegalStateException("schema file is not exist. schemaPath=$schemaPath")
+    }
     generator.parse(InputStreamReader(schemaFile.inputStream()).buffered().readText())
             .forEach { generator.generate(outputDirPath, it) }
 }
 
-class Generator {
-    fun read(path: String): File? {
+class Generator(
+        private val idType: IDType = IDType.String
+) {
+    fun read(path: String): File {
         return File("${System.getProperty("user.dir")}/$path")
     }
 
@@ -38,7 +45,7 @@ class Generator {
             Files.createDirectories(dir.toPath())
         }
         val writer = OutputStreamWriter(File("$outputDirPath/${data.name}.kt").outputStream()).buffered()
-        writer.write(data.convertBody())
+        writer.write(data.convertBody(idType))
         writer.flush()
         writer.close()
     }
