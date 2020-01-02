@@ -27,6 +27,9 @@ class GeneratorTest {
         assertEquals(expected?.readText(), actual.readText())
     }
 
+    // done: optional type(?) parse
+    // done: List type
+    // done: nullable ID
     @Test
     fun parseSchema() {
         val input = """
@@ -64,10 +67,28 @@ class GeneratorTest {
         assertEquals("List<List<String?>?>?", actualNestedNullableList.type)
     }
 
-    // done: optional type(?) parse
-    // done: List type
-    // done: nullable ID
-    // TODO: built-in scalar type (Long, Integer...)
+    // done: built-in scalar type
+    @Test
+    fun parseSchemaBuiltInScalarType() {
+        val input = """
+            type Scalars {
+                int: Int!
+                float: Float!
+                boolean: Boolean!
+            }
+        """.trimIndent()
+
+        val actual = generator.parse(input).first()
+
+        val actualInt = actual.fields.first { it.name == "int" }
+        assertEquals("Int", actualInt.type)
+        val actualFloat = actual.fields.first { it.name == "float" }
+        assertEquals("Float", actualFloat.type)
+        val actualBoolean = actual.fields.first { it.name == "boolean" }
+        assertEquals("Boolean", actualBoolean.type)
+    }
+
+    // TODO: enum
     // TODO: type interface
 
     @Test

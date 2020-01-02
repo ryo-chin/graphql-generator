@@ -42,3 +42,9 @@ type ChatMessage implements Node {
     time: Date!
     user: User!
 }
+
+type Scalars {
+    int: Int!
+    float: Float!
+    boolean: Boolean!
+}
