@@ -1,6 +1,8 @@
 
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.io.File
 import java.io.InputStreamReader
 
 /**
@@ -47,4 +49,61 @@ class GeneratorTest {
     // TODO: List type
     // TODO: type interface
     // TODO: ID type setting (Long, Integer...)
+
+    @Test
+    fun convertBody() {
+        val input = """
+            type User implements Node {
+                id: ID!
+                username: String!
+                email: String
+                role: Role!
+            }
+        """.trimIndent()
+        val expected =
+        """
+            data class User(
+                val id: String,
+                val username: String,
+                val email: String?,
+                val role: Role
+            )
+        """.trimIndent()
+        val parsed = generator.parse(input).first()
+
+        val actual = generator.convertBody(parsed)
+
+        assertEquals(expected, actual.trimIndent())
+    }
+
+    @Test
+    fun generateKotlinFile() {
+        val input = """
+            type User implements Node {
+                id: ID!
+                username: String!
+                email: String
+                role: Role!
+            }
+        """.trimIndent()
+        val expected = """
+            | data class User(
+            |     val id: String,
+            |     val username: String,
+            |     val email: String?,
+            |     val role: Role
+            | )
+            | 
+        """.trimMargin("| ")
+
+        val fileName = "User"
+        val outputDirPath = "tmp/autogen"
+
+        generator.generate(outputDirPath, generator.parse(input).first())
+
+        val actualFile = File("${System.getProperty("user.dir")}/$outputDirPath/$fileName.kt")
+        val actualBody = InputStreamReader(actualFile.inputStream()).buffered().readText()
+        assertTrue(actualFile.exists())
+        assertEquals(expected, actualBody)
+    }
 }
