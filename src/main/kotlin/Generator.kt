@@ -1,15 +1,25 @@
-import graphql.language.FieldDefinition
-import graphql.language.NonNullType
 import graphql.language.ObjectTypeDefinition
-import graphql.language.TypeName
 import graphql.parser.Parser
 import java.io.File
+import java.io.InputStreamReader
 import java.io.OutputStreamWriter
 import java.nio.file.Files
 
 /**
  * @author hakiba
  */
+
+fun main(args: Array<String>) {
+    val generator = Generator()
+    val schemaPath = args.asList().elementAtOrNull(0) ?: throw IllegalArgumentException("arg[0] schemaPath is required")
+    val outputDirPath = args.asList().elementAtOrNull(1)
+            ?: throw IllegalArgumentException("arg[1] outputDirPath is required")
+    val schemaFile = generator.read(schemaPath)
+            ?: throw IllegalStateException("schema file is not exist. schemaPath=$schemaPath")
+    generator.parse(InputStreamReader(schemaFile.inputStream()).buffered().readText())
+            .forEach { generator.generate(outputDirPath, it) }
+}
+
 class Generator {
     fun read(path: String): File? {
         return File("${System.getProperty("user.dir")}/$path")
@@ -19,42 +29,7 @@ class Generator {
         val document = Parser().parseDocument(schemaString)
         return document.definitions.filterIsInstance<ObjectTypeDefinition>()
                 .filterNot { it.name == "Query" }
-                .map { objType ->
-                    TypeSchema(objType.name, objType.fieldDefinitions.map {
-                        FieldData(it.name, typeName(it))
-                    })
-                }
-    }
-
-    private fun typeName(def: FieldDefinition): String {
-        val typeName = when (def.type::class) {
-            NonNullType::class -> {
-                val nonNullType = def.type as NonNullType
-                val typeName = nonNullType.type as TypeName
-                typeName.name
-            }
-            TypeName::class -> {
-                val nullableType = def.type as TypeName
-                nullableType.name + "?"
-            }
-            else -> throw IllegalArgumentException("Illegal TypeName: type=${def.type}")
-        }
-        return when (typeName) {
-            "ID" -> "String"
-            else -> typeName
-        }
-    }
-
-    fun convertBody(schema: TypeSchema): String {
-        return """
-            | data class ${schema.name}(
-            | ${multiLine(schema.fields) { "    val ${it.name}: ${it.type}" }}
-            | )
-            | """.trimMargin("| ")
-    }
-
-    private fun <T: Any> multiLine(values: List<T>, convertFunc: (T) -> String): String {
-        return values.joinToString(",\n", transform = convertFunc)
+                .map { TypeSchema.from(it) }
     }
 
     fun generate(outputDirPath: String, schema: TypeSchema) {
@@ -63,7 +38,7 @@ class Generator {
             Files.createDirectories(dir.toPath())
         }
         val writer = OutputStreamWriter(File("$outputDirPath/${schema.name}.kt").outputStream()).buffered()
-        writer.write(convertBody(schema))
+        writer.write(schema.convertBody())
         writer.flush()
         writer.close()
     }

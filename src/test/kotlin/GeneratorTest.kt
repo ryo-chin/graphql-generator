@@ -11,6 +11,11 @@ import java.io.InputStreamReader
 class GeneratorTest {
     private val generator = Generator()
 
+    // @Test // for test execute
+    fun testMain() {
+        main(arrayOf("src/test/resources/graphql/schema.graphql", "tmp/autogen"))
+    }
+
     @Test
     fun readSchemaFile() {
         val expected = Generator::class.java.classLoader.getResource("graphql/schema.graphql")
@@ -71,7 +76,7 @@ class GeneratorTest {
         """.trimIndent()
         val parsed = generator.parse(input).first()
 
-        val actual = generator.convertBody(parsed)
+        val actual = parsed.convertBody()
 
         assertEquals(expected, actual.trimIndent())
     }
