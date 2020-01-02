@@ -1,47 +1,39 @@
+import graphql.language.*
 
-import graphql.language.FieldDefinition
-import graphql.language.NonNullType
-import graphql.language.ObjectTypeDefinition
-import graphql.language.TypeName
-
-class TypeSchema(
+class ObjectTypeData(
         val name: String,
         val fields: List<FieldData>
 ) {
     companion object {
-        fun from(def: ObjectTypeDefinition): TypeSchema =
-                TypeSchema(def.name, def.fieldDefinitions.map {
+        fun from(def: ObjectTypeDefinition): ObjectTypeData =
+                ObjectTypeData(def.name, def.fieldDefinitions.map {
                     FieldData(it.name, typeName(it))
                 })
 
-        private fun typeName(def: FieldDefinition): String {
-            val typeName = when (def.type::class) {
-                NonNullType::class -> {
-                    val nonNullType = def.type as NonNullType
-                    val typeName = nonNullType.type as TypeName
-                    typeName.name
+        private fun typeName(def: FieldDefinition): String =
+                when (typeName(def.type)) {
+                    "ID" -> "String"
+                    else -> typeName(def.type)
                 }
-                TypeName::class -> {
-                    val nullableType = def.type as TypeName
-                    nullableType.name + "?"
-                }
-                else -> throw IllegalArgumentException("Illegal TypeName: type=${def.type}")
-            }
-            return when (typeName) {
-                "ID" -> "String"
-                else -> typeName
-            }
-        }
 
+        private fun typeName(type: Type, parent: Type? = null): String {
+            val typeName = when (type) {
+                is TypeName -> type.name
+                is NonNullType -> typeName(type.type, type)
+                is ListType -> "List<${typeName(type.type)}>"
+                else -> throw IllegalArgumentException("Illegal Type: type=$type")
+            }
+            return if (type is NonNullType || parent is NonNullType) typeName else "$typeName?"
+        }
     }
 
-    fun convertBody(): String {
-        return """
+    fun convertBody(): String =
+            """
             | data class $name(
-            | ${multiLine(fields) { "    val ${it.name}: ${it.type}" }}
+            | ${multiLine(fields)
+            { "    val ${it.name}: ${it.type}" }}
             | )
             | """.trimMargin("| ")
-    }
 
     private fun <T : Any> multiLine(values: List<T>, convertFunc: (T) -> String): String {
         return values.joinToString(",\n", transform = convertFunc)

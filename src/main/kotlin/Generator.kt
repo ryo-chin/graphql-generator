@@ -25,20 +25,20 @@ class Generator {
         return File("${System.getProperty("user.dir")}/$path")
     }
 
-    fun parse(schemaString: String): List<TypeSchema> {
+    fun parse(schemaString: String): List<ObjectTypeData> {
         val document = Parser().parseDocument(schemaString)
         return document.definitions.filterIsInstance<ObjectTypeDefinition>()
                 .filterNot { it.name == "Query" }
-                .map { TypeSchema.from(it) }
+                .map { ObjectTypeData.from(it) }
     }
 
-    fun generate(outputDirPath: String, schema: TypeSchema) {
+    fun generate(outputDirPath: String, data: ObjectTypeData) {
         val dir = File(outputDirPath)
         if (!dir.exists()) {
             Files.createDirectories(dir.toPath())
         }
-        val writer = OutputStreamWriter(File("$outputDirPath/${schema.name}.kt").outputStream()).buffered()
-        writer.write(schema.convertBody())
+        val writer = OutputStreamWriter(File("$outputDirPath/${data.name}.kt").outputStream()).buffered()
+        writer.write(data.convertBody())
         writer.flush()
         writer.close()
     }

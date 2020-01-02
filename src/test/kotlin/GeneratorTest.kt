@@ -35,6 +35,10 @@ class GeneratorTest {
                 username: String!
                 email: String
                 role: Role!
+                phoneNumbers: [String!]!
+                posts: [Post!]
+                nestedList: [[String!]!]!
+                nestedNullableList: [[String]]
             }
         """.trimIndent()
         val actual = generator.parse(input).first()
@@ -47,13 +51,20 @@ class GeneratorTest {
         assertEquals("String?", actualEmail.type)
         val actualRole = actual.fields.first { it.name == "role" }
         assertEquals("Role", actualRole.type)
+        val actualPhoneNumbers = actual.fields.first { it.name == "phoneNumbers" }
+        assertEquals("List<String>", actualPhoneNumbers.type)
+        val actualNestedList = actual.fields.first { it.name == "nestedList" }
+        assertEquals("List<List<String>>", actualNestedList.type)
+        val actualNestedNullableList = actual.fields.first { it.name == "nestedNullableList" }
+        assertEquals("List<List<String?>?>?", actualNestedNullableList.type)
     }
 
     // done: optional type(?) parse
-    // TODO: built-in scalar type (Long, Integer...)
-    // TODO: List type
-    // TODO: type interface
+    // done: List type
+    // TODO: nullable ID
     // TODO: ID type setting (Long, Integer...)
+    // TODO: built-in scalar type (Long, Integer...)
+    // TODO: type interface
 
     @Test
     fun convertBody() {
