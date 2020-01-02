@@ -22,9 +22,9 @@ class GeneratorTest {
                 ?.let { InputStreamReader(it.openStream()).buffered() }
 
         val actual = generator.read("src/test/resources/graphql/schema.graphql")
-                ?.let { InputStreamReader(it.inputStream()).buffered() }
+                .let { InputStreamReader(it.inputStream()).buffered() }
 
-        assertEquals(expected?.readText(), actual?.readText())
+        assertEquals(expected?.readText(), actual.readText())
     }
 
     @Test
