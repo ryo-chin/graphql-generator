@@ -5,26 +5,7 @@ class ObjectTypeData(
         val fields: List<FieldData>
 ) {
     companion object {
-        fun from(def: ObjectTypeDefinition): ObjectTypeData =
-                ObjectTypeData(def.name, def.fieldDefinitions.map {
-                    FieldData(it.name, typeName(it))
-                })
-
-        private fun typeName(def: FieldDefinition): String =
-                when (typeName(def.type)) {
-                    "ID" -> "String"
-                    else -> typeName(def.type)
-                }
-
-        private fun typeName(type: Type, parent: Type? = null): String {
-            val typeName = when (type) {
-                is TypeName -> type.name
-                is NonNullType -> typeName(type.type, type)
-                is ListType -> "List<${typeName(type.type)}>"
-                else -> throw IllegalArgumentException("Illegal Type: type=$type")
-            }
-            return if (type is NonNullType || parent is NonNullType) typeName else "$typeName?"
-        }
+        fun from(def: ObjectTypeDefinition): ObjectTypeData = ObjectTypeData(def.name, FieldData.from(def.fieldDefinitions))
     }
 
     fun convertBody(): String =
@@ -43,4 +24,18 @@ class ObjectTypeData(
 class FieldData(
         val name: String,
         val type: String
-)
+) {
+    companion object {
+        fun from(defs: List<FieldDefinition>): List<FieldData> = defs.map { FieldData(it.name, typeName(it.type)) }
+
+        private fun typeName(type: Type, parent: Type? = null): String {
+            val typeName = when (type) {
+                is TypeName -> if (type.name == "ID") "String" else type.name
+                is NonNullType -> typeName(type.type, type)
+                is ListType -> "List<${typeName(type.type)}>"
+                else -> throw IllegalArgumentException("Illegal Type: type=$type")
+            }
+            return if (type is NonNullType || parent is NonNullType) typeName else "$typeName?"
+        }
+    }
+}

@@ -11,7 +11,7 @@ import java.io.InputStreamReader
 class GeneratorTest {
     private val generator = Generator()
 
-    // @Test // for test execute
+     @Test // for test execute
     fun testMain() {
         main(arrayOf("src/test/resources/graphql/schema.graphql", "tmp/autogen"))
     }
@@ -32,6 +32,7 @@ class GeneratorTest {
         val input = """
             type User implements Node {
                 id: ID!
+                nullableId: ID
                 username: String!
                 email: String
                 role: Role!
@@ -45,6 +46,8 @@ class GeneratorTest {
         assertEquals("User", actual.name)
         val actualId = actual.fields.first { it.name == "id" }
         assertEquals("String", actualId.type)
+        val actualNullableId = actual.fields.first { it.name == "nullableId" }
+        assertEquals("String?", actualNullableId.type)
         val actualUsername = actual.fields.first { it.name == "username" }
         assertEquals("String", actualUsername.type)
         val actualEmail = actual.fields.first { it.name == "email" }
@@ -61,7 +64,7 @@ class GeneratorTest {
 
     // done: optional type(?) parse
     // done: List type
-    // TODO: nullable ID
+    // done: nullable ID
     // TODO: ID type setting (Long, Integer...)
     // TODO: built-in scalar type (Long, Integer...)
     // TODO: type interface
