@@ -1,8 +1,9 @@
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import java.io.File
 import java.io.InputStreamReader
+import java.nio.file.Files
+import java.util.stream.Collectors
 
 /**
  * @author hakiba
@@ -14,7 +15,7 @@ class GeneratorTest {
     // done: nullable ID
     // done: built-in scalar type
     // done: ID type setting (Long, Integer...)
-    // TODO: read multiple file
+    // done: read multiple file
     // TODO: generate resolver
     // TODO: execute by gradle (or native image)
     // TODO: generate input
@@ -33,10 +34,28 @@ class GeneratorTest {
         val expected = Generator::class.java.classLoader.getResource("graphql/schema.graphql")
                 ?.let { InputStreamReader(it.openStream()).buffered() }
 
-        val actual = generator.read("src/test/resources/graphql/schema.graphql")
+        val actual = generator.read("src/test/resources/graphql/schema.graphql").first()
                 .let { InputStreamReader(it.inputStream()).buffered() }
 
         assertEquals(expected?.readText(), actual.readText())
+    }
+
+    @Test
+    fun readSchemaFileFromDir() {
+        val resource = Generator::class.java.classLoader.getResource("graphql")!!
+        val expected = resource
+                .let { File(it.toURI()).toPath() }
+                .let { Files.list(it) }.collect(Collectors.toList())
+                .map { it.toFile() }
+                .groupBy({ it.name }, { InputStreamReader(it.inputStream()).buffered().readText() })
+
+        val actual = generator.read("src/test/resources/graphql")
+
+        actual.forEach {
+            val exp = expected[it.name]?.firstOrNull()
+            assertNotNull(exp, "${it.name} is not exists")
+            assertEquals(exp, InputStreamReader(it.inputStream()).buffered().readText())
+        }
     }
 
     @Test

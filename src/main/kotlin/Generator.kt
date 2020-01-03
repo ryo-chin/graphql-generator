@@ -4,6 +4,7 @@ import java.io.File
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
 import java.nio.file.Files
+import java.util.stream.Collectors
 
 /**
  * @author hakiba
@@ -17,7 +18,7 @@ fun main(args: Array<String>) {
 
     val generator = Generator(idType)
 
-    val schemaFile = generator.read(schemaPath)
+    val schemaFile = generator.read(schemaPath).first()
     if (!schemaFile.exists()) {
         throw IllegalStateException("schema file is not exist. schemaPath=$schemaPath")
     }
@@ -28,8 +29,14 @@ fun main(args: Array<String>) {
 class Generator(
         private val idType: IDType = IDType.String
 ) {
-    fun read(path: String): File {
-        return File("${System.getProperty("user.dir")}/$path")
+
+    fun read(path: String): List<File> {
+        val dest = File("${System.getProperty("user.dir")}/$path")
+        return if (dest.isDirectory) {
+            Files.list(dest.toPath()).map { it.toFile() }.collect(Collectors.toList())
+        } else {
+            listOf(dest)
+        }
     }
 
     fun parse(schemaString: String): List<ObjectTypeData> {
