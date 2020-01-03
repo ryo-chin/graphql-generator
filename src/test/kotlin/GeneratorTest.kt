@@ -2,6 +2,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import java.io.File
 import java.io.InputStreamReader
+import java.io.OutputStreamWriter
 import java.nio.file.Files
 import java.util.stream.Collectors
 
@@ -16,6 +17,7 @@ class GeneratorTest {
     // done: built-in scalar type
     // done: ID type setting (Long, Integer...)
     // done: read multiple file
+    // done: generate from multiple file
     // TODO: generate resolver
     // TODO: execute by gradle (or native image)
     // TODO: generate input
@@ -27,6 +29,89 @@ class GeneratorTest {
     fun testMain() {
         System.setProperty("idType", "Long")
         main(arrayOf("src/test/resources/graphql/schema.graphql", "tmp/autogen"))
+    }
+
+    @Test
+    fun integrationTest() {
+        val rootDir = System.getProperty("user.dir")
+        val genPath = "tmp/autogen/test"
+        val sourcePath = "src/test/resources/graphql/test"
+        val sourceDir = File("$rootDir/$sourcePath")
+        Files.createDirectories(sourceDir.toPath())
+
+        val inputs = mapOf("user.graphql" to """
+            type User implements Node {
+                id: ID!
+                username: String!
+                email: String!
+                role: Role!
+            }
+        """.trimIndent(), "chat.graphql" to """
+            type Chat implements Node {
+                id: ID!
+                users: [User!]!
+                messages: [ChatMessage!]!
+            }
+            
+            type ChatMessage implements Node {
+                id: ID!
+                content: String!
+                time: Date!
+                user: User!
+            }
+        """.trimIndent())
+        inputs.forEach {
+            val writer = OutputStreamWriter(File("$rootDir/$sourcePath/${it.key}").outputStream()).buffered()
+            writer.write(it.value)
+            writer.flush()
+            writer.close()
+        }
+
+        val expected = mapOf("User.kt" to """
+            | data class User(
+            |     val id: String,
+            |     val username: String,
+            |     val email: String,
+            |     val role: Role
+            | )
+            | 
+        """.trimMargin("| "), "Chat.kt" to """
+            | data class Chat(
+            |     val id: String,
+            |     val users: List<User>,
+            |     val messages: List<ChatMessage>
+            | )
+            | 
+        """.trimMargin("| "), "ChatMessage.kt" to """
+            | data class ChatMessage(
+            |     val id: String,
+            |     val content: String,
+            |     val time: Date,
+            |     val user: User
+            | )
+            | 
+        """.trimMargin("| "))
+
+        main(arrayOf(sourcePath, genPath))
+
+        val genDir = File("$rootDir/$genPath")
+        val actual = Files.list(genDir.toPath()).collect(Collectors.toList())
+                .map { it.toFile() }
+                .groupBy({ it.name }, { InputStreamReader(it.inputStream()).buffered().readText() })
+        expected.forEach {
+            val body = actual[it.key]?.firstOrNull()
+            assertNotNull(body)
+            assertEquals(it.value, body)
+        }
+
+        Files.list(sourceDir.toPath()).forEach {
+            Files.deleteIfExists(it)
+        }
+        Files.deleteIfExists(sourceDir.toPath())
+        Files.list(genDir.toPath()).forEach {
+            Files.deleteIfExists(it)
+        }
+        Files.deleteIfExists(genDir.toPath())
     }
 
     @Test

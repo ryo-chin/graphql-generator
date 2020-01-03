@@ -18,11 +18,8 @@ fun main(args: Array<String>) {
 
     val generator = Generator(idType)
 
-    val schemaFile = generator.read(schemaPath).first()
-    if (!schemaFile.exists()) {
-        throw IllegalStateException("schema file is not exist. schemaPath=$schemaPath")
-    }
-    generator.parse(InputStreamReader(schemaFile.inputStream()).buffered().readText())
+    generator.read(schemaPath)
+            .flatMap { generator.parse(InputStreamReader(it.inputStream()).buffered().readText()) }
             .forEach { generator.generate(outputDirPath, it) }
 }
 
@@ -31,7 +28,12 @@ class Generator(
 ) {
 
     fun read(path: String): List<File> {
-        val dest = File("${System.getProperty("user.dir")}/$path")
+        val fullPath = "${System.getProperty("user.dir")}/$path"
+        val dest = File(fullPath)
+        if (!dest.exists()) {
+            throw IllegalStateException("schema file is not exist. path=$fullPath")
+        }
+
         return if (dest.isDirectory) {
             Files.list(dest.toPath()).map { it.toFile() }.collect(Collectors.toList())
         } else {
