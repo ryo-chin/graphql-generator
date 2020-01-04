@@ -1,0 +1,7 @@
+buildscript {
+    dependencies {
+        classpath files('graphql-generator-1.0-SNAPSHOT.jar')
+    }
+}
+
+apply plugin: 'com.github.ryo-chin.generate'
