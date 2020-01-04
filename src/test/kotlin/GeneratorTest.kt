@@ -18,8 +18,9 @@ class GeneratorTest {
     // done: ID type setting (Long, Integer...)
     // done: read multiple file
     // done: generate from multiple file
+    // done: execute by gradle (or native image)
+    // TODO: configuration by build.gradle
     // TODO: generate resolver
-    // TODO: execute by gradle (or native image)
     // TODO: generate input
     // TODO: generate enum
     // TODO: implements type's interface
