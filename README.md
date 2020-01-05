@@ -1,3 +1,6 @@
+# About
+Automatically generate the classes required when using [graphql-java-tools](https://github.com/graphql-java-kickstart/graphql-java-tools) in kotlin.
+
 # How to use
 Add plugin settings to build.gradle.
 ```groovy
