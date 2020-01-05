@@ -19,7 +19,8 @@ class GeneratorTest {
     // done: read multiple file
     // done: generate from multiple file
     // done: execute by gradle (or native image)
-    // TODO: configuration by build.gradle
+    // done: configuration by build.gradle
+    // TODO: public plugin
     // TODO: generate resolver
     // TODO: generate input
     // TODO: generate enum

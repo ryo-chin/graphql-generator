@@ -6,12 +6,19 @@ import org.gradle.api.Project
  */
 class GraphqlGeneratePlugin : Plugin<Project> {
     override fun apply(project: Project) {
+        project.extensions.create("graphql_generator", GraphqlGenerateConfiguration::class.java)
         project.run {
             tasks.create("generate").doLast {
-                val inputPath = "src/test/resources/graphql/schema.graphql"
-                val outputPath = "tmp/autogen"
-                main(arrayOf(inputPath, outputPath))
+                val config = project.extensions.getByType(GraphqlGenerateConfiguration::class.java)
+                System.setProperty("idType", config.idType)
+                main(arrayOf(config.inputPath, config.outputPath))
             }
         }
     }
+}
+
+open class GraphqlGenerateConfiguration{
+    lateinit var inputPath: String
+    lateinit var outputPath: String
+    var idType: String = "String"
 }

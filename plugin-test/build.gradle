@@ -5,3 +5,9 @@ buildscript {
 }
 
 apply plugin: 'com.github.ryo-chin.generate'
+
+graphql_generator {
+    inputPath = 'src/test/resources/graphql/schema.graphql'
+    outputPath = 'tmp/autogen'
+    idType = 'Long'
+}
