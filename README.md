@@ -2,12 +2,14 @@
 Automatically generate the classes required when using [graphql-java-tools](https://github.com/graphql-java-kickstart/graphql-java-tools) in kotlin.
 
 # How to use
+Download from [releases](https://github.com/ryo-chin/graphql-generator/releases) and put under classpath it.
+
 Add plugin settings to build.gradle.
 ```groovy
 // build.gradle
 buildscript {
     dependencies {
-        classpath files('graphql-generator-0.0.1.jar') // TODO: fix if approved by gradle portal 
+        classpath files('graphql-generator-0.0.1-SNAPSHOT.jar') // TODO: fix if approved by gradle portal 
     }
 }
 
