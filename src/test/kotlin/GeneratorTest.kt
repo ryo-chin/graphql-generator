@@ -94,6 +94,7 @@ class GeneratorTest {
             | 
         """.trimMargin("| "))
 
+        System.setProperty("idType", "String")
         main(arrayOf(sourcePath, genPath))
 
         val genDir = File("$rootDir/$genPath")
