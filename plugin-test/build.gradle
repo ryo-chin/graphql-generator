@@ -1,10 +1,14 @@
-buildscript {
-    dependencies {
-        classpath files('graphql-generator-0.0.1.jar')
-    }
-}
+//buildscript {
+//    dependencies {
+//        classpath files('graphql-generator-0.0.1.jar')
+//    }
+//}
+//
+//apply plugin: 'com.github.ryo-chin.graphql-generator'
 
-apply plugin: 'com.github.ryo-chin.graphql-generator'
+plugins {
+    id "com.github.ryo-chin.graphql-generator" version "0.0.1-SNAPSHOT"
+}
 
 graphql_generator {
     inputPath = 'src/test/resources/graphql/schema.graphql'

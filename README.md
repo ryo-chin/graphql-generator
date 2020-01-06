@@ -7,19 +7,16 @@ Download from [releases](https://github.com/ryo-chin/graphql-generator/releases)
 Add plugin settings to build.gradle.
 ```groovy
 // build.gradle
-buildscript {
-    dependencies {
-        classpath files('graphql-generator-0.0.1-SNAPSHOT.jar') // TODO: fix if approved by gradle portal 
-    }
+plugins {
+    id "com.github.ryo-chin.graphql-generator" version "0.0.1-SNAPSHOT"
 }
-
-apply plugin: 'com.github.ryo-chin.graphql-generator'
 
 graphql_generator {
     inputPath = 'src/main/resources/graphql/schema.graphql' 
     // # if you want to generate all graphql files under the directory 
     // inputPath = 'src/main/resources/graphql'
     outputPath = 'src/main/kotlin/graphql/autogen'
+    // ID type (default = 'String')
     idType = 'Long'
 }
 ```
