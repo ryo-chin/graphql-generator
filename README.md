@@ -4,7 +4,7 @@ Automatically generate the classes required when using [graphql-java-tools](http
 # How to use
 Download from [releases](https://github.com/ryo-chin/graphql-generator/releases) and put under classpath it.
 
-Add plugin settings to build.gradle.
+Add plugin settings to build.gradle. ref. [gradle portal](https://plugins.gradle.org/plugin/com.github.ryo-chin.graphql-generator)
 ```groovy
 // build.gradle
 plugins {
