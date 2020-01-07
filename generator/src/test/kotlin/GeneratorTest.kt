@@ -20,9 +20,12 @@ class GeneratorTest {
     // done: generate from multiple file
     // done: execute by gradle (or native image)
     // done: configuration by build.gradle
-    // TODO: public plugin
-    // TODO: generate resolver
+    // done: public plugin
+    // TODO: add package
+    // TODO: not exists dir create
     // TODO: generate input
+    // TODO: generate full query
+    // TODO: generate resolver
     // TODO: generate enum
     // TODO: implements type's interface
 

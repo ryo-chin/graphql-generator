@@ -24,3 +24,8 @@ Execute gradle task.
 ```bash
 ./gradlew generate
 ```
+
+# Release
+```bash
+./gradlew generator:publishPlugins -Dgradle.publish.key=<key> -Dgradle.publish.secret=<secret>
+```

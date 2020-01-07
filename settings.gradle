@@ -1,2 +1,4 @@
 rootProject.name = 'graphql-generator'
+include 'generator'
 include 'plugin-test'
+include 'spring-app'
