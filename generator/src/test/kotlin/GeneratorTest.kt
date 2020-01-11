@@ -1,3 +1,7 @@
+import io.kotlintest.data.suspend.forall
+import io.kotlintest.shouldBe
+import io.kotlintest.specs.StringSpec
+import io.kotlintest.tables.row
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import java.io.File
@@ -38,13 +42,10 @@ class GeneratorTest {
 
     @Test
     fun integrationTest() {
-        val rootDir = System.getProperty("user.dir")
-        val genPath = "tmp/autogen/test"
-        val sourcePath = "src/test/resources/graphql/test"
-        val sourceDir = File("$rootDir/$sourcePath")
-        Files.createDirectories(sourceDir.toPath())
-
-        val inputs = mapOf("user.graphql" to """
+        val outputDirPath = "src/kotlin/main/graphql/autogen"
+        val inputDirPath = "src/test/resources/graphql/test"
+        val idType = "String"
+        val graphqlFiles = mapOf("user.graphql" to """
             type User implements Node {
                 id: ID!
                 username: String!
@@ -65,13 +66,6 @@ class GeneratorTest {
                 user: User!
             }
         """.trimIndent())
-        inputs.forEach {
-            val writer = OutputStreamWriter(File("$rootDir/$sourcePath/${it.key}").outputStream()).buffered()
-            writer.write(it.value)
-            writer.flush()
-            writer.close()
-        }
-
         val expected = mapOf("User.kt" to """
             | data class User(
             |     val id: String,
@@ -97,11 +91,22 @@ class GeneratorTest {
             | 
         """.trimMargin("| "))
 
-        System.setProperty("idType", "String")
-        main(arrayOf(sourcePath, genPath))
+        val rootDir = System.getProperty("user.dir")
+        val sourceDir = File("$rootDir/$inputDirPath")
+        Files.createDirectories(sourceDir.toPath())
 
-        val genDir = File("$rootDir/$genPath")
-        val actual = Files.list(genDir.toPath()).collect(Collectors.toList())
+        graphqlFiles.forEach {
+            val writer = OutputStreamWriter(File("$rootDir/$inputDirPath/${it.key}").outputStream()).buffered()
+            writer.write(it.value)
+            writer.flush()
+            writer.close()
+        }
+
+        System.setProperty("idType", idType)
+        main(arrayOf(inputDirPath, outputDirPath))
+
+        val outputDir = File("$rootDir/$outputDirPath")
+        val actual = Files.list(outputDir.toPath()).collect(Collectors.toList())
                 .map { it.toFile() }
                 .groupBy({ it.name }, { InputStreamReader(it.inputStream()).buffered().readText() })
         expected.forEach {
@@ -114,10 +119,10 @@ class GeneratorTest {
             Files.deleteIfExists(it)
         }
         Files.deleteIfExists(sourceDir.toPath())
-        Files.list(genDir.toPath()).forEach {
+        Files.list(outputDir.toPath()).forEach {
             Files.deleteIfExists(it)
         }
-        Files.deleteIfExists(genDir.toPath())
+        Files.deleteIfExists(outputDir.toPath())
     }
 
     @Test
@@ -289,4 +294,27 @@ class GeneratorTest {
         assertTrue(actualFile.exists())
         assertEquals(expected, actualBody)
     }
+
+    class ParsePackageSpec : StringSpec({
+        val generator = Generator()
+        "parse package name" {
+            forall(
+                    row("src/main/kotlin/graphql", "graphql"),
+                    row("generator/src/main/kotlin/graphql", "graphql"),
+                    row("generator/src/main/kotlin/graphql/autogen", "graphql.autogen"),
+                    row("generator/src/main/kotlin/graphql/autogen/", "graphql.autogen"),
+                    row("generator/src/main/kotlin", null),
+                    row("src/test/kotlin/graphql", "graphql"),
+                    row("generator/src/test/kotlin/graphql", "graphql"),
+                    row("generator/src/test/kotlin/graphql/autogen", "graphql.autogen"),
+                    row("generator/src/test/kotlin/graphql/autogen/", "graphql.autogen"),
+                    row("generator/src/test/kotlin", null),
+                    row("generator/tmp/autogen/", null)
+            )
+            { input, expected ->
+                generator.parsePackageName(input) shouldBe expected
+            }
+        }
+    })
 }
+

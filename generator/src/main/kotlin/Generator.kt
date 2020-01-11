@@ -58,4 +58,13 @@ class Generator(
         writer.flush()
         writer.close()
     }
+
+    fun parsePackageName(outputDirPath: String): String? {
+        val escaped = if (outputDirPath.last() == '/') outputDirPath.substringBeforeLast("/") else outputDirPath
+        return listOf("src/main/kotlin/", "src/test/kotlin/")
+                .filter { escaped.contains(it) }
+                .map { escaped.split(it).elementAt(1) }
+                .map { it.replace("/", ".") }
+                .firstOrNull()
+    }
 }
