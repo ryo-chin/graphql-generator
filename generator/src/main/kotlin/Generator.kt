@@ -9,18 +9,27 @@ import java.util.stream.Collectors
 /**
  * @author hakiba
  */
-
 fun main(args: Array<String>) {
     val schemaPath = args.asList().elementAtOrNull(0) ?: throw IllegalArgumentException("arg[0] schemaPath is required")
     val outputDirPath = args.asList().elementAtOrNull(1)
             ?: throw IllegalArgumentException("arg[1] outputDirPath is required")
     val idType = System.getProperty("idType")?.let { IDType.valueOf(it) } ?: IDType.String
+    val outputMode = System.getProperty("outputMode")?.let { OutputMode.valueOf(it) } ?: OutputMode.Separate
 
     val generator = Generator(idType)
 
-    generator.read(schemaPath)
-            .flatMap { generator.parse(InputStreamReader(it.inputStream()).buffered().readText()) }
-            .forEach { generator.generate(outputDirPath, it) }
+    when (outputMode) {
+        OutputMode.Separate -> {
+            generator.read(schemaPath)
+                    .flatMap { generator.parse(InputStreamReader(it.inputStream()).buffered().readText()) }
+                    .forEach { generator.generate(outputDirPath, it) }
+        }
+        OutputMode.OneToOne -> {
+            generator.read(schemaPath)
+                    .map { it.name.replace(".graphqls", "").replace(".graphql", "").capitalize() to generator.parse(InputStreamReader(it.inputStream()).buffered().readText()) }
+                    .forEach { generator.generate(outputDirPath, it.first.capitalize(), it.second) }
+        }
+    }
 }
 
 class Generator(
@@ -63,6 +72,21 @@ class Generator(
         writer.close()
     }
 
+    fun generate(outputDirPath: String, fileName: String, data: List<ObjectTypeData>) {
+        val dir = File(outputDirPath)
+        if (!dir.exists()) {
+            Files.createDirectories(dir.toPath())
+        }
+        val writer = OutputStreamWriter(File("$outputDirPath/$fileName.kt").outputStream()).buffered()
+        parsePackageName(outputDirPath)?.let {
+            writer.write("package $it\n")
+            writer.newLine()
+        }
+        writer.write(data.joinToString(separator = "\n") { it.convertBody(idType) })
+        writer.flush()
+        writer.close()
+    }
+
     fun parsePackageName(outputDirPath: String): String? {
         val escaped = if (outputDirPath.last() == '/') outputDirPath.substringBeforeLast("/") else outputDirPath
         return listOf("src/main/kotlin/", "src/test/kotlin/")
@@ -71,4 +95,9 @@ class Generator(
                 .map { it.replace("/", ".") }
                 .firstOrNull()
     }
+}
+
+enum class OutputMode {
+    Separate,
+    OneToOne;
 }

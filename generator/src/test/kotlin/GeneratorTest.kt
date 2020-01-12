@@ -28,8 +28,8 @@ class GeneratorTest {
     // done: configuration by build.gradle
     // done: public plugin
     // done: add package
-    // TODO: not exists dir create
-    // TODO: one kotlin file output
+    // done: one kotlin file output
+    // TODO?: not exists dir create
     // TODO: generate input
     // TODO: generate full query
     // TODO: generate resolver
@@ -114,6 +114,44 @@ class GeneratorTest {
             """.trimMargin("| "))
 
             integrationTest(inputDirPath, graphqlFiles, outputDirPath, expected, idType)
+        }
+
+        "one file output" {
+            val inputDirPath = "src/test/resources/graphql/test"
+            val outputDirPath = "src/main/kotlin/graphql/autogen"
+            val idType = "String"
+            val graphqlFiles = inputGraphqlFiles
+            val expected = mapOf("User.kt" to """
+                | package graphql.autogen
+                | 
+                | data class User(
+                |     val id: String,
+                |     val username: String,
+                |     val email: String,
+                |     val role: Role
+                | )
+                | 
+            """.trimMargin("| "), "Chat.kt" to """
+                | package graphql.autogen
+                | 
+                | data class Chat(
+                |     val id: String,
+                |     val users: List<User>,
+                |     val messages: List<ChatMessage>
+                | )
+                | 
+                | data class ChatMessage(
+                |     val id: String,
+                |     val content: String,
+                |     val time: Date,
+                |     val user: User
+                | )
+                | 
+            """.trimMargin("| "))
+
+            System.setProperty("outputMode", "OneToOne")
+            integrationTest(inputDirPath, graphqlFiles, outputDirPath, expected, idType)
+            System.setProperty("outputMode", "")
         }
     })
 
@@ -332,7 +370,7 @@ private fun integrationTest(inputDirPath: String, inputs: Map<String, String>, o
     expected.forEach {
         val body = actual[it.key]?.firstOrNull()
         body shouldNotBe null
-        it.value shouldBe  body
+        body shouldBe it.value
     }
 
     Files.list(sourceDir.toPath()).forEach {
