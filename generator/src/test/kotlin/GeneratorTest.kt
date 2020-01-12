@@ -29,6 +29,7 @@ class GeneratorTest {
     // done: public plugin
     // done: add package
     // done: one kotlin file output
+    // TODO: add graphql file name test
     // TODO?: not exists dir create
     // TODO: generate input
     // TODO: generate full query
