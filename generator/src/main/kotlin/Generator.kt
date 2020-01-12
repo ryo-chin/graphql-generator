@@ -54,6 +54,10 @@ class Generator(
             Files.createDirectories(dir.toPath())
         }
         val writer = OutputStreamWriter(File("$outputDirPath/${data.name}.kt").outputStream()).buffered()
+        parsePackageName(outputDirPath)?.let {
+            writer.write("package $it\n")
+            writer.newLine()
+        }
         writer.write(data.convertBody(idType))
         writer.flush()
         writer.close()

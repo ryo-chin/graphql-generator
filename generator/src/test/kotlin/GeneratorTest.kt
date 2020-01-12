@@ -1,5 +1,7 @@
+
 import io.kotlintest.data.suspend.forall
 import io.kotlintest.shouldBe
+import io.kotlintest.shouldNotBe
 import io.kotlintest.specs.StringSpec
 import io.kotlintest.tables.row
 import org.junit.jupiter.api.Assertions.*
@@ -25,8 +27,9 @@ class GeneratorTest {
     // done: execute by gradle (or native image)
     // done: configuration by build.gradle
     // done: public plugin
-    // TODO: add package
+    // done: add package
     // TODO: not exists dir create
+    // TODO: one kotlin file output
     // TODO: generate input
     // TODO: generate full query
     // TODO: generate resolver
@@ -40,90 +43,79 @@ class GeneratorTest {
         main(arrayOf("src/test/resources/graphql/schema.graphql", "tmp/autogen"))
     }
 
-    @Test
-    fun integrationTest() {
-        val outputDirPath = "src/kotlin/main/graphql/autogen"
-        val inputDirPath = "src/test/resources/graphql/test"
-        val idType = "String"
-        val graphqlFiles = mapOf("user.graphql" to """
-            type User implements Node {
-                id: ID!
-                username: String!
-                email: String!
-                role: Role!
-            }
-        """.trimIndent(), "chat.graphql" to """
-            type Chat implements Node {
-                id: ID!
-                users: [User!]!
-                messages: [ChatMessage!]!
-            }
-            
-            type ChatMessage implements Node {
-                id: ID!
-                content: String!
-                time: Date!
-                user: User!
-            }
-        """.trimIndent())
-        val expected = mapOf("User.kt" to """
-            | data class User(
-            |     val id: String,
-            |     val username: String,
-            |     val email: String,
-            |     val role: Role
-            | )
-            | 
-        """.trimMargin("| "), "Chat.kt" to """
-            | data class Chat(
-            |     val id: String,
-            |     val users: List<User>,
-            |     val messages: List<ChatMessage>
-            | )
-            | 
-        """.trimMargin("| "), "ChatMessage.kt" to """
-            | data class ChatMessage(
-            |     val id: String,
-            |     val content: String,
-            |     val time: Date,
-            |     val user: User
-            | )
-            | 
-        """.trimMargin("| "))
+    class IntegrationTests : StringSpec({
+        "standard" {
+            val inputDirPath = "src/test/resources/graphql/test"
+            val outputDirPath = "src/main/kotlin/graphql/autogen"
+            val idType = "String"
+            val graphqlFiles = inputGraphqlFiles
+            val expected = mapOf("User.kt" to """
+                | package graphql.autogen
+                | 
+                | data class User(
+                |     val id: String,
+                |     val username: String,
+                |     val email: String,
+                |     val role: Role
+                | )
+                | 
+            """.trimMargin("| "), "Chat.kt" to """
+                | package graphql.autogen
+                | 
+                | data class Chat(
+                |     val id: String,
+                |     val users: List<User>,
+                |     val messages: List<ChatMessage>
+                | )
+                | 
+            """.trimMargin("| "), "ChatMessage.kt" to """
+                | package graphql.autogen
+                | 
+                | data class ChatMessage(
+                |     val id: String,
+                |     val content: String,
+                |     val time: Date,
+                |     val user: User
+                | )
+                | 
+            """.trimMargin("| "))
 
-        val rootDir = System.getProperty("user.dir")
-        val sourceDir = File("$rootDir/$inputDirPath")
-        Files.createDirectories(sourceDir.toPath())
-
-        graphqlFiles.forEach {
-            val writer = OutputStreamWriter(File("$rootDir/$inputDirPath/${it.key}").outputStream()).buffered()
-            writer.write(it.value)
-            writer.flush()
-            writer.close()
+            integrationTest(inputDirPath, graphqlFiles, outputDirPath, expected, idType)
         }
 
-        System.setProperty("idType", idType)
-        main(arrayOf(inputDirPath, outputDirPath))
+        "not exist package" {
+            val inputDirPath = "src/test/resources/graphql/test"
+            val outputDirPath = "tmp/graqhql/autogen"
+            val idType = "String"
+            val graphqlFiles = inputGraphqlFiles
+            val expected = mapOf("User.kt" to """
+                | data class User(
+                |     val id: String,
+                |     val username: String,
+                |     val email: String,
+                |     val role: Role
+                | )
+                | 
+            """.trimMargin("| "), "Chat.kt" to """
+                | data class Chat(
+                |     val id: String,
+                |     val users: List<User>,
+                |     val messages: List<ChatMessage>
+                | )
+                | 
+            """.trimMargin("| "), "ChatMessage.kt" to """
+                | data class ChatMessage(
+                |     val id: String,
+                |     val content: String,
+                |     val time: Date,
+                |     val user: User
+                | )
+                | 
+            """.trimMargin("| "))
 
-        val outputDir = File("$rootDir/$outputDirPath")
-        val actual = Files.list(outputDir.toPath()).collect(Collectors.toList())
-                .map { it.toFile() }
-                .groupBy({ it.name }, { InputStreamReader(it.inputStream()).buffered().readText() })
-        expected.forEach {
-            val body = actual[it.key]?.firstOrNull()
-            assertNotNull(body)
-            assertEquals(it.value, body)
+            integrationTest(inputDirPath, graphqlFiles, outputDirPath, expected, idType)
         }
-
-        Files.list(sourceDir.toPath()).forEach {
-            Files.deleteIfExists(it)
-        }
-        Files.deleteIfExists(sourceDir.toPath())
-        Files.list(outputDir.toPath()).forEach {
-            Files.deleteIfExists(it)
-        }
-        Files.deleteIfExists(outputDir.toPath())
-    }
+    })
 
     @Test
     fun readSchemaFile() {
@@ -318,3 +310,59 @@ class GeneratorTest {
     })
 }
 
+private fun integrationTest(inputDirPath: String, inputs: Map<String, String>, outputDirPath: String, expected: Map<String, String>, idType: String) {
+    val rootDir = System.getProperty("user.dir")
+    val sourceDir = File("$rootDir/$inputDirPath")
+    Files.createDirectories(sourceDir.toPath())
+
+    inputs.forEach {
+        val writer = OutputStreamWriter(File("$rootDir/$inputDirPath/${it.key}").outputStream()).buffered()
+        writer.write(it.value)
+        writer.flush()
+        writer.close()
+    }
+
+    System.setProperty("idType", idType)
+    main(arrayOf(inputDirPath, outputDirPath))
+
+    val outputDir = File("$rootDir/$outputDirPath")
+    val actual = Files.list(outputDir.toPath()).collect(Collectors.toList())
+            .map { it.toFile() }
+            .groupBy({ it.name }, { InputStreamReader(it.inputStream()).buffered().readText() })
+    expected.forEach {
+        val body = actual[it.key]?.firstOrNull()
+        body shouldNotBe null
+        it.value shouldBe  body
+    }
+
+    Files.list(sourceDir.toPath()).forEach {
+        Files.deleteIfExists(it)
+    }
+    Files.deleteIfExists(sourceDir.toPath())
+    Files.list(outputDir.toPath()).forEach {
+        Files.deleteIfExists(it)
+    }
+    Files.deleteIfExists(outputDir.toPath())
+}
+
+val inputGraphqlFiles = mapOf("user.graphql" to """
+                type User implements Node {
+                    id: ID!
+                    username: String!
+                    email: String!
+                    role: Role!
+                }
+            """.trimIndent(), "chat.graphql" to """
+                type Chat implements Node {
+                    id: ID!
+                    users: [User!]!
+                    messages: [ChatMessage!]!
+                }
+                
+                type ChatMessage implements Node {
+                    id: ID!
+                    content: String!
+                    time: Date!
+                    user: User!
+                }
+            """.trimIndent())
