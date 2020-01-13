@@ -41,7 +41,7 @@ class Generator(
     }
 
     fun generate(outputDirPath: String, file: GraphQLFile) {
-        val fileName = file.generateFileName()
+        val fileName = file.kotlinClassFileName()
         val body = file.extractObjectTypeData().joinToString(separator = "\n") { it.convertBody(idType) }
 
         doGenerate(outputDirPath, fileName, body)

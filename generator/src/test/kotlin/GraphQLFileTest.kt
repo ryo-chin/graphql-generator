@@ -1,4 +1,5 @@
-import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
 import java.io.File
 import java.io.InputStreamReader
@@ -19,7 +20,7 @@ class GraphQLFileTest {
 
         val actual = reader.read("src/test/resources/graphql/schema.graphql").first()
 
-        Assertions.assertEquals(expected?.readText(), actual.readText())
+        assertEquals(expected?.readText(), actual.readText())
     }
 
     @Test
@@ -35,8 +36,8 @@ class GraphQLFileTest {
 
         actual.forEach {
             val exp = expected[it.name()]?.firstOrNull()
-            Assertions.assertNotNull(exp, "${it.name()} is not exists")
-            Assertions.assertEquals(exp, it.readText())
+            assertNotNull(exp, "${it.name()} is not exists")
+            assertEquals(exp, it.readText())
         }
     }
 
@@ -58,23 +59,23 @@ class GraphQLFileTest {
         """.trimIndent()
         val actual = parser.parseObjectTypeDocument(input).first()
 
-        Assertions.assertEquals("User", actual.name)
+        assertEquals("User", actual.name)
         val actualId = actual.fields.first { it.name == "id" }
-        Assertions.assertEquals("ID", actualId.type)
+        assertEquals("ID", actualId.type)
         val actualNullableId = actual.fields.first { it.name == "nullableId" }
-        Assertions.assertEquals("ID?", actualNullableId.type)
+        assertEquals("ID?", actualNullableId.type)
         val actualUsername = actual.fields.first { it.name == "username" }
-        Assertions.assertEquals("String", actualUsername.type)
+        assertEquals("String", actualUsername.type)
         val actualEmail = actual.fields.first { it.name == "email" }
-        Assertions.assertEquals("String?", actualEmail.type)
+        assertEquals("String?", actualEmail.type)
         val actualRole = actual.fields.first { it.name == "role" }
-        Assertions.assertEquals("Role", actualRole.type)
+        assertEquals("Role", actualRole.type)
         val actualPhoneNumbers = actual.fields.first { it.name == "phoneNumbers" }
-        Assertions.assertEquals("List<String>", actualPhoneNumbers.type)
+        assertEquals("List<String>", actualPhoneNumbers.type)
         val actualNestedList = actual.fields.first { it.name == "nestedList" }
-        Assertions.assertEquals("List<List<String>>", actualNestedList.type)
+        assertEquals("List<List<String>>", actualNestedList.type)
         val actualNestedNullableList = actual.fields.first { it.name == "nestedNullableList" }
-        Assertions.assertEquals("List<List<String?>?>?", actualNestedNullableList.type)
+        assertEquals("List<List<String?>?>?", actualNestedNullableList.type)
     }
 
     @Test
@@ -90,11 +91,11 @@ class GraphQLFileTest {
         val actual = parser.parseObjectTypeDocument(input).first()
 
         val actualInt = actual.fields.first { it.name == "int" }
-        Assertions.assertEquals("Int", actualInt.type)
+        assertEquals("Int", actualInt.type)
         val actualFloat = actual.fields.first { it.name == "float" }
-        Assertions.assertEquals("Float", actualFloat.type)
+        assertEquals("Float", actualFloat.type)
         val actualBoolean = actual.fields.first { it.name == "boolean" }
-        Assertions.assertEquals("Boolean", actualBoolean.type)
+        assertEquals("Boolean", actualBoolean.type)
     }
 
     @Test
@@ -119,7 +120,7 @@ class GraphQLFileTest {
 
         val actual = parsed.convertBody()
 
-        Assertions.assertEquals(expected, actual.trimIndent())
+        assertEquals(expected, actual.trimIndent())
     }
 
     @Test
@@ -146,6 +147,22 @@ class GraphQLFileTest {
         val parsed = parser.parseObjectTypeDocument(input).first()
         val actual = parsed.convertBody(IDType.Long)
 
-        Assertions.assertEquals(expected, actual.trimIndent())
+        assertEquals(expected, actual.trimIndent())
+    }
+
+    @Test
+    fun kotlinClassFileName() {
+        val expected = "StandardUserProfile"
+        listOf(
+                "StandardUserProfile.graphql",
+                "standardUserProfile.graphql",
+                "standard-user-profile.graphql",
+                "standard_user_profile.graphql",
+                "standard-user_profile.graphql"
+        ).forEach {
+            val file = File(it)
+            val actual = GraphQLFile(file).kotlinClassFileName()
+            assertEquals(expected, actual, it)
+        }
     }
 }

@@ -1,7 +1,6 @@
 import graphql.language.ObjectTypeDefinition
 import graphql.parser.Parser
 import java.io.File
-import java.io.InputStreamReader
 import java.nio.file.Files
 import java.util.stream.Collectors
 
@@ -18,13 +17,13 @@ class GraphQLFile(
         return file.bufferedReader().readText()
     }
 
-    fun generateFileName(): String {
-        return file.name.replace(".graphqls", "").replace(".graphql", "").capitalize()
+    fun kotlinClassFileName(): String {
+        val withoutExt = name().replace(".graphqls", "").replace(".graphql", "")
+        return withoutExt.split("-", "_").joinToString("") { it.capitalize() }
     }
 
     fun extractObjectTypeData(): List<ObjectTypeData> {
-        val schemaString = InputStreamReader(file.inputStream()).buffered().readText()
-        return parser.parseObjectTypeDocument(schemaString)
+        return parser.parseObjectTypeDocument(readText())
     }
 }
 
