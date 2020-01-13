@@ -1,10 +1,6 @@
-import graphql.language.ObjectTypeDefinition
-import graphql.parser.Parser
 import java.io.File
-import java.io.InputStreamReader
 import java.io.OutputStreamWriter
 import java.nio.file.Files
-import java.util.stream.Collectors
 
 /**
  * @author hakiba
@@ -17,17 +13,18 @@ fun main(args: Array<String>) {
     val outputMode = System.getProperty("outputMode")?.let { OutputMode.valueOf(it) } ?: OutputMode.Separate
 
     val generator = Generator(idType)
+    val reader = GraphQLFileReader()
+    val graphqlFiles = reader.read(schemaPath)
 
     when (outputMode) {
         OutputMode.Separate -> {
-            generator.read(schemaPath)
-                    .flatMap { generator.parse(InputStreamReader(it.inputStream()).buffered().readText()) }
+            graphqlFiles
+                    .flatMap { it.extractObjectTypeData() }
                     .forEach { generator.generate(outputDirPath, it) }
         }
         OutputMode.OneToOne -> {
-            generator.read(schemaPath)
-                    .map { it.name.replace(".graphqls", "").replace(".graphql", "").capitalize() to generator.parse(InputStreamReader(it.inputStream()).buffered().readText()) }
-                    .forEach { generator.generate(outputDirPath, it.first.capitalize(), it.second) }
+            graphqlFiles
+                    .forEach { generator.generate(outputDirPath, it) }
         }
     }
 }
@@ -36,43 +33,21 @@ class Generator(
         private val idType: IDType = IDType.String
 ) {
 
-    fun read(path: String): List<File> {
-        val fullPath = "${System.getProperty("user.dir")}/$path"
-        val dest = File(fullPath)
-        if (!dest.exists()) {
-            throw IllegalStateException("schema file is not exist. path=$fullPath")
-        }
-
-        return if (dest.isDirectory) {
-            Files.list(dest.toPath()).map { it.toFile() }.collect(Collectors.toList())
-        } else {
-            listOf(dest)
-        }
-    }
-
-    fun parse(schemaString: String): List<ObjectTypeData> {
-        val document = Parser().parseDocument(schemaString)
-        return document.definitions.filterIsInstance<ObjectTypeDefinition>()
-                .filterNot { it.name == "Query" }
-                .map { ObjectTypeData.from(it) }
-    }
-
     fun generate(outputDirPath: String, data: ObjectTypeData) {
-        val dir = File(outputDirPath)
-        if (!dir.exists()) {
-            Files.createDirectories(dir.toPath())
-        }
-        val writer = OutputStreamWriter(File("$outputDirPath/${data.name}.kt").outputStream()).buffered()
-        parsePackageName(outputDirPath)?.let {
-            writer.write("package $it\n")
-            writer.newLine()
-        }
-        writer.write(data.convertBody(idType))
-        writer.flush()
-        writer.close()
+        val fileName = data.name
+        val body = data.convertBody(idType)
+
+        doGenerate(outputDirPath, fileName, body)
     }
 
-    fun generate(outputDirPath: String, fileName: String, data: List<ObjectTypeData>) {
+    fun generate(outputDirPath: String, file: GraphQLFile) {
+        val fileName = file.generateFileName()
+        val body = file.extractObjectTypeData().joinToString(separator = "\n") { it.convertBody(idType) }
+
+        doGenerate(outputDirPath, fileName, body)
+    }
+
+    private fun doGenerate(outputDirPath: String, fileName: String, body: String) {
         val dir = File(outputDirPath)
         if (!dir.exists()) {
             Files.createDirectories(dir.toPath())
@@ -82,7 +57,7 @@ class Generator(
             writer.write("package $it\n")
             writer.newLine()
         }
-        writer.write(data.joinToString(separator = "\n") { it.convertBody(idType) })
+        writer.write(body)
         writer.flush()
         writer.close()
     }
