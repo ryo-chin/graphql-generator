@@ -26,6 +26,13 @@ Execute gradle task.
 ```
 
 # Release
-```bash
-./gradlew generator:publishPlugins -Dgradle.publish.key=<key> -Dgradle.publish.secret=<secret>
-```
+1. change version in build.gradle.
+2. build jar
+	```bash
+	 ./gradlew generator:jar
+	```
+3. test on plugin-test project 
+4. publish plugin
+	```bash
+	./gradlew generator:publishPlugins -Dgradle.publish.key=<key> -Dgradle.publish.secret=<secret>
+	```

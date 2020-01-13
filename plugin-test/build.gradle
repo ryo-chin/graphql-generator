@@ -1,17 +1,18 @@
 //buildscript {
 //    dependencies {
-//        classpath files('graphql-generator-0.0.1-SNAPSHOT.jar')
+//        classpath files('graphql-generator-0.0.2.jar')
 //    }
 //}
 //
 //apply plugin: 'com.github.ryo-chin.graphql-generator'
 
 plugins {
-    id "com.github.ryo-chin.graphql-generator" version "0.0.1-SNAPSHOT"
+    id "com.github.ryo-chin.graphql-generator" version "0.0.2"
 }
 
 graphql_generator {
     inputPath = 'generator/src/test/resources/graphql/schema.graphql'
     outputPath = 'tmp/autogen'
+    outputMode = 'OneToOne'
     idType = 'Long'
 }
