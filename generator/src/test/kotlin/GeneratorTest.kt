@@ -30,7 +30,8 @@ class GeneratorTest {
     // done: add package
     // done: one kotlin file output
     // done: add graphql file name test
-    // TODO?: not exists dir create
+    // TODO: not exists dir create when generate kotlin class file
+    // TODO: gradle setting name change graphql_generator -> graphqlGenerator
     // TODO: generate input
     // TODO: generate full query
     // TODO: generate resolver
