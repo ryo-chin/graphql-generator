@@ -22,7 +22,7 @@ graphql_generator {
 ```
 Execute gradle task.
 ```bash
-./gradlew generate
+./gradlew generateGraphQLFiles
 ```
 
 # Release
